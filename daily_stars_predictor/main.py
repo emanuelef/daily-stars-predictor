@@ -1,13 +1,24 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import pandas as pd
 from prophet import Prophet
 import math
+import time
 
 app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=0)  # Compress all responses
+
+# CORS (Cross-Origin Resource Sharing) middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Update this with the list of allowed origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/health")
@@ -33,11 +44,13 @@ async def predict(repo: str):
 
     print(df.tail())
 
+    start_time = time.time()
+
     m = Prophet()
     m.fit(df)
 
     future = m.make_future_dataframe(periods=60, freq="D")
-    print(future.tail())
+    # print(future.tail())
 
     forecast = m.predict(future)
 
@@ -47,7 +60,11 @@ async def predict(repo: str):
     forecast_data = forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]]
 
     # Round up 'yhat' to the next integer
-    forecast_data["yhat"] = forecast_data["yhat"].apply(math.ceil).astype(int)
+    forecast_data.loc[:, "yhat"] = forecast_data["yhat"].apply(math.ceil).astype(int)
+
+    end_time = time.time()  # Record the end time
+    elapsed_time = end_time - start_time  # Calculate the elapsed time
+    print(f"Prediction took {elapsed_time:.2f} seconds")
 
     last_60_forecast = forecast_data.tail(61)
     # Combine the API data and forecast data
