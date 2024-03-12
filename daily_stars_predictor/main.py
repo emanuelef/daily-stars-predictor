@@ -10,9 +10,9 @@ app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=0)  # Compress all responses
 
 
-@app.get("/")
+@app.get("/health")
 async def root():
-    return {"message": "Hello from FastAPI!"}
+    return {"message": "Ciao"}
 
 
 @app.get("/predict")
