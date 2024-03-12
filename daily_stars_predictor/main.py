@@ -58,6 +58,7 @@ async def predict(repo: str):
 
     # Extract relevant information from the forecast
     forecast_data = forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]]
+    forecast_trend = forecast[["ds", "trend"]]
 
     # Round up 'yhat' to the next integer
     forecast_data.loc[:, "yhat"] = forecast_data["yhat"].apply(math.ceil).astype(int)
@@ -68,7 +69,10 @@ async def predict(repo: str):
 
     last_60_forecast = forecast_data.tail(61)
     # Combine the API data and forecast data
-    result = {"forecast_data": last_60_forecast.to_dict(orient="records")}
+    result = {
+        "forecast_data": last_60_forecast.to_dict(orient="records"),
+        "forecast_trend": forecast_trend.to_dict(orient="records"),
+    }
 
     return JSONResponse(content=result)
 
