@@ -4,6 +4,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 import httpx
 import pandas as pd
 from prophet import Prophet
+import math
 
 app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=0)  # Compress all responses
@@ -35,7 +36,7 @@ async def predict(repo: str):
     m = Prophet()
     m.fit(df)
 
-    future = m.make_future_dataframe(periods=365, freq="D")
+    future = m.make_future_dataframe(periods=60, freq="D")
     print(future.tail())
 
     forecast = m.predict(future)
@@ -45,10 +46,12 @@ async def predict(repo: str):
     # Extract relevant information from the forecast
     forecast_data = forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]]
 
-    print(forecast_data.tail())
+    # Round up 'yhat' to the next integer
+    forecast_data["yhat"] = forecast_data["yhat"].apply(math.ceil).astype(int)
 
+    last_60_forecast = forecast_data.tail(61)
     # Combine the API data and forecast data
-    result = {"forecast_data": forecast_data.to_dict(orient="records")}
+    result = {"forecast_data": last_60_forecast.to_dict(orient="records")}
 
     return JSONResponse(content=result)
 
