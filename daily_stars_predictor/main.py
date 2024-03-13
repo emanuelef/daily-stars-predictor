@@ -7,6 +7,7 @@ import pandas as pd
 from prophet import Prophet
 import math
 import time
+from cachetools import TTLCache
 
 app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=0)  # Compress all responses
@@ -20,6 +21,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# In-memory cache with a TTL (Time To Live) of 10 days
+cache = TTLCache(maxsize=1, ttl=864000)
+
 
 @app.get("/health")
 async def root():
@@ -28,6 +32,12 @@ async def root():
 
 @app.get("/predict")
 async def predict(repo: str):
+    # Check if the data is already in the cache
+    if repo in cache:
+        cached_data = cache[repo]
+        print("Returning cached data.")
+        return JSONResponse(content=cached_data)
+
     api_url = f"http://143.47.226.125:8080/allStars?repo={repo}"
     async with httpx.AsyncClient() as client:
         api_response = await client.get(api_url)
@@ -73,6 +83,9 @@ async def predict(repo: str):
         "forecast_data": last_60_forecast.to_dict(orient="records"),
         "forecast_trend": forecast_trend.to_dict(orient="records"),
     }
+
+    # Cache the result
+    cache[repo] = result
 
     return JSONResponse(content=result)
 
