@@ -22,7 +22,7 @@ app.add_middleware(
 )
 
 # In-memory cache with a TTL (Time To Live) of 10 days
-cache = TTLCache(maxsize=1, ttl=864000)
+cache = TTLCache(maxsize=1000, ttl=864000)
 
 
 @app.get("/health")
