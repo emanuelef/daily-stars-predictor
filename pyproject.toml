@@ -2,7 +2,7 @@
 name = "daily-stars-predictor"
 version = "0.1.0"
 description = ""
-authors = ["Emanuele Fumagalli <efumagal@synamedia.com>"]
+authors = ["Emanuele Fumagalli"]
 readme = "README.md"
 package-mode = false
 
