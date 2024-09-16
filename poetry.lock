@@ -102,18 +102,21 @@ files = [
 
 [[package]]
 name = "compress"
-version = "0.0.3"
-description = "All in one data compression library."
+version = "0.1.1"
+description = "Package short description."
 optional = false
-python-versions = "*"
+python-versions = ">=3.8"
 files = [
-    {file = "compress-0.0.3-py2.py3-none-any.whl", hash = "sha256:dc71b23a773427fe5d2f26989549016d2dea3e01cdbb0af245f46241302e4651"},
-    {file = "compress-0.0.3.tar.gz", hash = "sha256:e5a44d50f78f1d8957f9ecd99d8a200cd22cac2f8e5d7f18bf070cd1f235500a"},
+    {file = "compress-0.1.1-py3-none-any.whl", hash = "sha256:f5457d46581211c7336f0935d23e0ebc193ccb7e13b769ba646207e5734f5130"},
+    {file = "compress-0.1.1.tar.gz", hash = "sha256:2515acb17f3b276eff5be3a168598c1e59292fd546e020abfe7be53071a183d2"},
 ]
 
 [package.extras]
-docs = ["docfly (>=0.0.17)", "pygments", "rstobj (>=0.0.5)", "sphinx (==1.8.1)", "sphinx-copybutton", "sphinx-jinja", "sphinx-rtd-theme"]
-tests = ["pytest (==5.4.3)", "pytest-cov (==2.10.1)"]
+docs = ["Sphinx (==5.3.0)", "docfly (==2.0.3)", "furo (==2023.03.27)", "ipython (==8.10.0)", "nbsphinx (==0.8.12)", "pygments (==2.15.1)", "rstobj (==1.2.1)", "sphinx-copybutton (==0.5.1)", "sphinx-design (==0.5.0)", "sphinx-jinja (==2.0.2)"]
+lz4 = ["lz4"]
+snappy = ["python-snappy"]
+tests = ["lz4", "pytest", "pytest-cov", "python-snappy", "pyzstd"]
+zstd = ["pyzstd"]
 
 [[package]]
 name = "contourpy"
@@ -1066,4 +1069,4 @@ standard = ["colorama (>=0.4)", "httptools (>=0.5.0)", "python-dotenv (>=0.13)",
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "6224b2a83db802b8096372eded07cbb245202520ec05ba1febf106bef17148ba"
+content-hash = "bd584654bcc0cbe11fa7f4101f6ddc7d4748983cb12bb5e0541e21911184717e"
