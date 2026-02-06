@@ -13,6 +13,8 @@ dependencies = [
     "prophet",
     "cachetools",
     "numpy",
+    "statsmodels",
+    "scipy",
 ]
 
 [dependency-groups]
