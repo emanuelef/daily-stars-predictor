@@ -1,24 +1,18 @@
-# Base image with desired Python version
-FROM python:3.12-slim
+FROM python:3.14-slim
 
-# Create a directory for the application
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 WORKDIR /app
 
-# Copy pyproject.toml to configure Poetry
-COPY pyproject.toml ./
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
 
-# Install Poetry (if not already installed in the base image)
-RUN pip install poetry
+# Install dependencies (no dev group, no editable install)
+RUN uv sync --no-dev --no-install-project --frozen
 
-# Configure Poetry not to create a virtual environment (we're using Docker)
-RUN poetry config virtualenvs.create false
-
-# Install dependencies (excluding development ones)
-RUN poetry install --no-dev
-
-# Copy your application code
+# Copy application code
 COPY daily_stars_predictor/. .
 
 EXPOSE 8082
 
-CMD ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8082"]
+CMD ["uv", "run", "--no-dev", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8082"]

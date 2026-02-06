@@ -1,6 +1,6 @@
 # daily_stars_predictor
 
-`poetry run uvicorn main:app --host 0.0.0.0 --port 8082 --reload`
+`uv run uvicorn daily_stars_predictor.main:app --host 0.0.0.0 --port 8082 --reload`
 
 `docker run -p 8082:8082 daily-stars-predictor`
 
