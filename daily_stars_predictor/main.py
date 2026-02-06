@@ -23,8 +23,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# In-memory cache with a TTL (Time To Live) of 3 days
-cache = TTLCache(maxsize=1000, ttl=259200)
+# In-memory cache with a TTL (Time To Live) of 2 days
+cache = TTLCache(maxsize=1000, ttl=172800)
+
+HTTPX_TIMEOUT = 30.0
 
 
 @app.get("/health")
@@ -41,46 +43,39 @@ async def predict(repo: str):
         return JSONResponse(content=cached_data)
 
     api_url = f"http://143.47.226.125:8080/allStars?repo={repo}"
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=HTTPX_TIMEOUT) as client:
         api_response = await client.get(api_url)
     api_data = api_response.json()
 
-    # Extracting stars data from the JSON
     stars_data = api_data["stars"]
-
-    # Creating a DataFrame
     df = pd.DataFrame(stars_data, columns=["ds", "y", "y2"])
-
-    # Converting the 'ds' column to datetime format
     df["ds"] = pd.to_datetime(df["ds"], format="%d-%m-%Y")
 
     print(df.tail())
 
     start_time = time.time()
 
-    m = Prophet()
+    m = Prophet(daily_seasonality=False)
     m.fit(df)
 
     future = m.make_future_dataframe(periods=60, freq="D")
-    # print(future.tail())
-
     forecast = m.predict(future)
 
     forecast["ds"] = forecast["ds"].dt.strftime("%Y-%m-%d")
 
-    # Extract relevant information from the forecast
-    forecast_data = forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]]
+    forecast_data = forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]].copy()
     forecast_trend = forecast[["ds", "trend"]]
 
-    # Round up 'yhat' to the next integer
-    forecast_data.loc[:, "yhat"] = forecast_data["yhat"].apply(math.ceil).astype(int)
+    # Clamp to 0 (star counts can't be negative) and round up
+    forecast_data["yhat"] = forecast_data["yhat"].clip(lower=0).apply(math.ceil).astype(int)
+    forecast_data["yhat_lower"] = forecast_data["yhat_lower"].clip(lower=0)
+    forecast_data["yhat_upper"] = forecast_data["yhat_upper"].clip(lower=0)
 
-    end_time = time.time()  # Record the end time
-    elapsed_time = end_time - start_time  # Calculate the elapsed time
+    end_time = time.time()
+    elapsed_time = end_time - start_time
     print(f"Prediction took {elapsed_time:.2f} seconds")
 
     last_60_forecast = forecast_data.tail(61)
-    # Combine the API data and forecast data
     result = {
         "forecast_data": last_60_forecast.to_dict(orient="records"),
         "forecast_trend": forecast_trend.to_dict(orient="records"),
@@ -101,7 +96,7 @@ async def predict_statsmodels(repo: str):
         return JSONResponse(content=cached_data)
 
     api_url = f"http://143.47.226.125:8080/allStars?repo={repo}"
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=HTTPX_TIMEOUT) as client:
         api_response = await client.get(api_url)
     api_data = api_response.json()
 
@@ -137,9 +132,9 @@ async def predict_statsmodels(repo: str):
     forecast_df = pd.DataFrame(
         {
             "ds": future_dates.strftime("%Y-%m-%d"),
-            "yhat": forecast_values.apply(math.ceil).astype(int).values,
-            "yhat_lower": (forecast_values.values - margin).round(2),
-            "yhat_upper": (forecast_values.values + margin).round(2),
+            "yhat": forecast_values.clip(lower=0).apply(math.ceil).astype(int).values,
+            "yhat_lower": np.maximum(forecast_values.values - margin, 0).round(2),
+            "yhat_upper": np.maximum(forecast_values.values + margin, 0).round(2),
         }
     )
 
@@ -147,9 +142,9 @@ async def predict_statsmodels(repo: str):
     last_day = pd.DataFrame(
         {
             "ds": [df.index[-1].strftime("%Y-%m-%d")],
-            "yhat": [math.ceil(fitted_values.iloc[-1])],
-            "yhat_lower": [round(fitted_values.iloc[-1] - 1.645 * std, 2)],
-            "yhat_upper": [round(fitted_values.iloc[-1] + 1.645 * std, 2)],
+            "yhat": [max(math.ceil(fitted_values.iloc[-1]), 0)],
+            "yhat_lower": [round(max(fitted_values.iloc[-1] - 1.645 * std, 0), 2)],
+            "yhat_upper": [round(max(fitted_values.iloc[-1] + 1.645 * std, 0), 2)],
         }
     )
     forecast_df = pd.concat([last_day, forecast_df], ignore_index=True)

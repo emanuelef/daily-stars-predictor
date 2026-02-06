@@ -1,8 +1,8 @@
 # daily-stars-predictor
 
-A FastAPI service that predicts future GitHub star trends for any repository using [Prophet](https://facebook.github.io/prophet/) time series forecasting.
+A FastAPI service that predicts future GitHub star trends for any repository using time series forecasting.
 
-Given a GitHub repo, it fetches the historical daily star count, fits a Prophet model, and returns a 60-day forecast with confidence intervals and trend data.
+Given a GitHub repo, it fetches the historical daily star count, fits a forecasting model, and returns a 60-day forecast with confidence intervals and trend data. Two engines are available: [Prophet](https://facebook.github.io/prophet/) and [statsmodels Holt-Winters](https://www.statsmodels.org/stable/generated/statsmodels.tsa.holtwinters.ExponentialSmoothing.html).
 
 ## Prerequisites
 
@@ -32,20 +32,28 @@ curl http://localhost:8082/health
 
 ### `GET /predict?repo={owner/repo}`
 
-Returns a 60-day star forecast for the given GitHub repository.
+Returns a 60-day star forecast using **Prophet**.
 
 ```bash
 curl "http://localhost:8082/predict?repo=astral-sh/uv"
 ```
 
-**Response:**
+### `GET /predict/statsmodels?repo={owner/repo}`
+
+Returns a 60-day star forecast using **Holt-Winters Exponential Smoothing** (faster, no Stan dependency).
+
+```bash
+curl "http://localhost:8082/predict/statsmodels?repo=astral-sh/uv"
+```
+
+Both endpoints return the same response shape:
 
 | Field | Description |
 |-------|-------------|
 | `forecast_data` | 61 entries with `ds` (date), `yhat` (predicted stars), `yhat_lower` / `yhat_upper` (confidence interval) |
 | `forecast_trend` | Full time series trend component |
 
-Results are cached in-memory for 10 days.
+Results are cached in-memory for 2 days.
 
 ## Testing
 
