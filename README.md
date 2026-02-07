@@ -73,6 +73,14 @@ docker run -p 8082:8082 daily-stars-predictor
 # Or pull from GHCR
 docker run -p 8082:8082 ghcr.io/emanuelef/daily-stars-predictor:main
 
-# Run as a background daemon with auto-restart
+# Run as a background daemon with auto-restart (works with Watchtower)
 docker run --restart=always -d -p 8082:8082 ghcr.io/emanuelef/daily-stars-predictor:main
+```
+
+### Watchtower
+
+If you use [Watchtower](https://containrrr.dev/watchtower/) it will automatically detect new image pushes to GHCR and restart the container:
+
+```bash
+docker run -d --name watchtower -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower
 ```
